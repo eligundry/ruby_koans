@@ -28,32 +28,47 @@ require File.expand_path(File.dirname(__FILE__) + '/edgecase')
 # More scoring examples are given in the tests below:
 #
 # Your goal is to write the score method.
+#
+# http://www.peteonsoftware.com/index.php/2009/08/17/the-greed-ruby-koan/
+
+STANDARD_TRIPLET_MULTIPLIER = 100
+ONES_TRIPLET_MULTIPLIER = 1000
+ONES_VALUE = 100
+FIVES_VALUE = 50
 
 def score(dice)
-	patterns = {[1,1,1]=>1000, [2,2,2]=>200, [3,3,3]=>300,
-							[4,4,4]=>400, [5,5,5]=>500, [6,6,6]=>600,
-							1=>100, 5=>50}
-	sorted = dice.sort
-	
-	triple = patterns[sorted[0..2]]
-	single = patterns[sorted[0]]
+	result = 0
+	return result if invalid_dice?(dice)
 
-	if triple
-		partial_score = triple
-		rest = sorted[3..-1]
-	elseif single
-		partial_score = single
-		rest = sorted[1..-1]
-	else	
-		partial_score = 0
-		rest = sorted[1..-1]
+	dice_sort = {1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0, 6 => 0}
+
+	# Increment the tally, using the die face as the hash key
+	# by iterating over the passed in array of dice
+	dice.each do| die |
+		dice_sort[die] += 1
 	end
 
-	if rest
-		partial_score + score(rest)
-	else
-		partial_score
+	# Iterate over the pairs and score them up
+	dice_sort.each_pair do | key, value |
+		if none_single_score?(key)
+			result += key*STANDARD_TRIPLET_MULTIPLIER if value >= 3
+		else
+			groups_of_three, remainder = value/3, value%3
+
+			result += (ONES_TRIPLET_MULTIPLIER * groups_of_three) + (ONES_VALUE * remainder) if key == 1
+			result += (key * STANDARD_TRIPLET_MULTIPLIER * groups_of_three) + (FIVES_VALUE * remainder) if key == 5
+		end
 	end
+
+	result
+end
+
+def none_single_score?(die)
+	return true if die != 1 and die != 5
+end
+
+def invalid_dice?(dice)
+	return true if dice.length == 0
 end
 
 
